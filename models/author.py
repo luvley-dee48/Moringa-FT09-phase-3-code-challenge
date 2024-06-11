@@ -1,9 +1,15 @@
 from database.connection import get_db_connection
+from database.setup import create_tables
 
 class Author:
-    def __init__(self, name):
-        self._id = None 
+    def __init__(self, name, id=None):
+        self._id = id
         self.name = name  
+
+    @classmethod
+    def create_table(cls):
+        create_tables()
+
 
     def _create_author_in_db(self):
         conn = get_db_connection()
@@ -13,6 +19,21 @@ class Author:
         conn.commit()
         conn.close()
 
+    @classmethod
+    def drop_table(cls):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('DROP TABLE IF EXISTS authors')
+        conn.commit()
+        conn.close()
+
+    
+    @classmethod
+    def create(cls, name):
+        author= cls(name)
+        author.save()
+        return author
+    
     @property
     def id(self):
         return self._id
@@ -42,6 +63,28 @@ class Author:
             self._name = author_data[1]
         else:
             raise ValueError("Author with given ID does not exist in the database")
+        
+    def save(self):
+        """Save the author to the database."""
+        if not self._id:
+          
+            self._create_author_in_db()
+        else:
+           
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('UPDATE authors SET name = ? WHERE id = ?', (self._name, self._id))
+            conn.commit()
+            conn.close()
+
+
+    def delete(self):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM authors WHERE id = ?', (self.id,))
+        conn.commit()
+        conn.close()
+
 
     def __repr__(self):
         return f'<Author {self.name}>'
